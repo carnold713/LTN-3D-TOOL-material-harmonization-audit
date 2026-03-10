@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { formatScore, getScoreColor, getScoreBgColor } from "@/lib/utils";
 
 interface AuditResult {
@@ -28,12 +29,8 @@ interface AuditResult {
 
 type CompareMode = "side-by-side" | "overlay" | "cropped";
 
-export default function ResultsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function ResultsPage() {
+  const { id } = useParams<{ id: string }>();
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
