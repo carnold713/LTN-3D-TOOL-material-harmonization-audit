@@ -82,6 +82,8 @@ export default function AuditPage() {
       formData.append("image", file);
       formData.append("referenceId", selectedRef.id);
 
+      setProcessingStatus("AI is analyzing your material...");
+
       const res = await fetch("/api/audits", {
         method: "POST",
         body: formData,
@@ -92,12 +94,21 @@ export default function AuditPage() {
         throw new Error(data.error || "Submission failed");
       }
 
-      const { id } = await res.json();
-      setProcessingStatus("AI is analyzing your material...");
+      const { id, status } = await res.json();
 
-      // Poll for results
+      if (status === "COMPLETED") {
+        window.location.href = `/results/${id}`;
+        return;
+      } else if (status === "FAILED") {
+        // Fetch the audit to get the error message
+        const statusRes = await fetch(`/api/audits/${id}`);
+        const audit = await statusRes.json();
+        throw new Error(audit.errorMessage || "Analysis failed. Please try again.");
+      }
+
+      // Fallback: poll if status is still PROCESSING (shouldn't normally happen)
       let attempts = 0;
-      const maxAttempts = 60; // 3 minutes at 3s intervals
+      const maxAttempts = 60;
       const poll = setInterval(async () => {
         attempts++;
         try {
@@ -117,12 +128,6 @@ export default function AuditPage() {
             setError("Analysis timed out. Please try again.");
             setStep("upload");
             setUploading(false);
-          } else {
-            // Update status messages
-            if (attempts > 5) setProcessingStatus("Comparing finish quality...");
-            if (attempts > 10) setProcessingStatus("Evaluating color match...");
-            if (attempts > 15) setProcessingStatus("Assessing material properties...");
-            if (attempts > 20) setProcessingStatus("Generating detailed feedback...");
           }
         } catch {
           // Continue polling on network errors
