@@ -64,12 +64,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Process in background (non-blocking response)
-    processAudit(audit.id, apiKey).catch((error) => {
-      console.error(`Audit ${audit.id} processing failed:`, error);
-    });
+    // Process synchronously to avoid fire-and-forget being killed by runtime
+    const finalStatus = await processAudit(audit.id, apiKey);
 
-    return NextResponse.json({ id: audit.id, status: "PROCESSING" }, { status: 201 });
+    return NextResponse.json({ id: audit.id, status: finalStatus }, { status: 201 });
   } catch (error) {
     console.error("Failed to create audit:", error);
     return NextResponse.json(
@@ -79,13 +77,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processAudit(auditId: string, apiKey: string) {
+async function processAudit(auditId: string, apiKey: string): Promise<string> {
   try {
     const audit = await prisma.audit.findUnique({
       where: { id: auditId },
       include: { referenceImage: true },
     });
-    if (!audit) return;
+    if (!audit) return "FAILED";
 
     const [passThreshold, model] = await Promise.all([
       getPassThreshold(),
@@ -156,6 +154,7 @@ async function processAudit(auditId: string, apiKey: string) {
         croppedRefFilename,
       },
     });
+    return "COMPLETED";
   } catch (error) {
     console.error(`Audit ${auditId} processing error:`, error);
     await prisma.audit.update({
@@ -166,5 +165,6 @@ async function processAudit(auditId: string, apiKey: string) {
           error instanceof Error ? error.message : "Unknown error occurred",
       },
     });
+    return "FAILED";
   }
 }
