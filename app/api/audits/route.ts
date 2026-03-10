@@ -121,13 +121,14 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
         croppedUploadFilename = generateFilename("cropped.jpg", "crop_upload");
         await saveFile(croppedUploadFilename, croppedUpload);
 
-        // Also create a standardized crop of the reference for overlay
-        const croppedRef = await cropImage(refBuffer, {
+        // Crop the reference using its own detected material region
+        const refCropRegion = result.referenceCropRegion || {
           top_percent: 0,
           left_percent: 0,
           width_percent: 100,
           height_percent: 100,
-        });
+        };
+        const croppedRef = await cropImage(refBuffer, refCropRegion);
         croppedRefFilename = generateFilename("cropped.jpg", "crop_ref");
         await saveFile(croppedRefFilename, croppedRef);
       } catch (cropError) {

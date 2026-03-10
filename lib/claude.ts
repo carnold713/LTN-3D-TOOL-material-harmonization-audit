@@ -1,13 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+export interface CropRegionResult {
+  description: string;
+  top_percent: number;
+  left_percent: number;
+  width_percent: number;
+  height_percent: number;
+}
+
 export interface MaterialAuditResult {
-  cropRegion: {
-    description: string;
-    top_percent: number;
-    left_percent: number;
-    width_percent: number;
-    height_percent: number;
-  };
+  cropRegion: CropRegionResult;
+  referenceCropRegion: CropRegionResult;
   finish: {
     score: number;
     pass: boolean;
@@ -39,7 +42,12 @@ IMAGE 2 (second image): The SUBMITTED sample to evaluate against the reference.
 Compare the submitted sample against the reference material across three categories. Focus ONLY on the material/hardware surface itself — ignore backgrounds, walls, lighting conditions, environmental context, and any surrounding elements. If the submitted image is an environmental/lifestyle photo showing the material installed in a setting, mentally isolate just the material component.
 
 ### Crop Region Detection
-Identify the primary material/hardware region in the SUBMITTED image (IMAGE 2). Return a bounding box as percentages of the image dimensions. If the image is already a tight shot of just the material, the crop region should cover most of the image.
+For BOTH images, identify the region that contains ONLY the material surface texture — excluding any hardware fixtures (knobs, handles, switches), mounting plates, edges, borders, backgrounds, text overlays, and surrounding context. The goal is to isolate a representative patch of the raw material finish for comparison.
+
+- **referenceCropRegion**: The material-only region in the REFERENCE image (IMAGE 1).
+- **cropRegion**: The material-only region in the SUBMITTED image (IMAGE 2).
+
+Return bounding boxes as percentages of each image's dimensions. Crop TIGHTLY into the material — the result should show nothing but the surface texture/finish, similar to a macro shot of the material.
 
 ### Scoring Categories
 
@@ -71,8 +79,15 @@ A score below ${threshold} indicates a FAIL for that category.
 
 Respond with ONLY valid JSON — no markdown code fences, no additional text:
 {
+  "referenceCropRegion": {
+    "description": "Brief description of the material-only region in the reference image",
+    "top_percent": <0-100>,
+    "left_percent": <0-100>,
+    "width_percent": <0-100>,
+    "height_percent": <0-100>
+  },
   "cropRegion": {
-    "description": "Brief description of the detected material region in the submitted image",
+    "description": "Brief description of the material-only region in the submitted image",
     "top_percent": <0-100>,
     "left_percent": <0-100>,
     "width_percent": <0-100>,
