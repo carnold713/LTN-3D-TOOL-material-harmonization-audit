@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ReferenceImage {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  filename    String
+  mimetype    String
+  width       Int
+  height      Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  audits      Audit[]
+}
+
+model Audit {
+  id               String      @id @default(cuid())
+  referenceImageId String
+  referenceImage   ReferenceImage @relation(fields: [referenceImageId], references: [id])
+
+  uploadFilename    String
+  uploadMimetype    String
+  uploadWidth       Int
+  uploadHeight      Int
+
+  croppedRefFilename    String?
+  croppedUploadFilename String?
+
+  finishScore    Float?
+  colorScore     Float?
+  materialScore  Float?
+  overallPass    Boolean?
+
+  finishFeedback    String?
+  colorFeedback     String?
+  materialFeedback  String?
+
+  claudeRawResponse Json?
+
+  status       AuditStatus @default(PENDING)
+  errorMessage String?
+  visitorNote  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AuditStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
