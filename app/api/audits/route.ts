@@ -99,16 +99,8 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
     const refBase64 = await imageToBase64(refBuffer);
     const uploadBase64 = await imageToBase64(uploadBuffer);
 
-    // Load admin calibration feedback (most recent 20 reviewed audits with notes)
+    // Load all admin calibration feedback
     const calibrationData = await prisma.adminFeedback.findMany({
-      where: {
-        OR: [
-          { finishNote: { not: "" } },
-          { colorNote: { not: "" } },
-          { materialNote: { not: "" } },
-          { overallNote: { not: "" } },
-        ],
-      },
       include: {
         audit: {
           select: {
@@ -120,7 +112,6 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 20,
     });
 
     const calibration: CalibrationEntry[] = [];
