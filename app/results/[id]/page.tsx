@@ -15,6 +15,12 @@ interface AuditResult {
   finishFeedback: string | null;
   colorFeedback: string | null;
   materialFeedback: string | null;
+  finishPhotoshopFix: string | null;
+  colorPhotoshopFix: string | null;
+  materialPhotoshopFix: string | null;
+  finishRenderFix: string | null;
+  colorRenderFix: string | null;
+  materialRenderFix: string | null;
   croppedUploadFilename: string | null;
   croppedRefFilename: string | null;
   errorMessage: string | null;
@@ -154,6 +160,8 @@ export default function ResultsPage() {
       sublabel: "Surface texture & sheen",
       score: audit.finishScore,
       feedback: audit.finishFeedback,
+      photoshopFix: audit.finishPhotoshopFix,
+      renderFix: audit.finishRenderFix,
       pass: audit.finishScore != null && audit.finishScore >= 8,
     },
     {
@@ -161,6 +169,8 @@ export default function ResultsPage() {
       sublabel: "Hue, saturation & value",
       score: audit.colorScore,
       feedback: audit.colorFeedback,
+      photoshopFix: audit.colorPhotoshopFix,
+      renderFix: audit.colorRenderFix,
       pass: audit.colorScore != null && audit.colorScore >= 8,
     },
     {
@@ -168,6 +178,8 @@ export default function ResultsPage() {
       sublabel: "Composition & grain",
       score: audit.materialScore,
       feedback: audit.materialFeedback,
+      photoshopFix: audit.materialPhotoshopFix,
+      renderFix: audit.materialRenderFix,
       pass: audit.materialScore != null && audit.materialScore >= 8,
     },
   ];
@@ -401,6 +413,26 @@ export default function ResultsPage() {
                 <p className="text-sm text-gray-700 leading-relaxed">
                   {item.feedback}
                 </p>
+
+                {/* Photoshop & 3D Rendering Fix Instructions */}
+                {(item.photoshopFix || item.renderFix) && (
+                  <div className="mt-4 space-y-3">
+                    {item.photoshopFix && (
+                      <FixInstructionBlock
+                        icon="ps"
+                        title="Photoshop Fix"
+                        content={item.photoshopFix}
+                      />
+                    )}
+                    {item.renderFix && (
+                      <FixInstructionBlock
+                        icon="3d"
+                        title="3D Rendering Fix"
+                        content={item.renderFix}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             )
         )}
@@ -503,6 +535,51 @@ function PassFailBadge({ pass }: { pass: boolean }) {
     >
       {pass ? "Pass" : "Fail"}
     </span>
+  );
+}
+
+function FixInstructionBlock({
+  icon,
+  title,
+  content,
+}: {
+  icon: "ps" | "3d";
+  title: string;
+  content: string;
+}) {
+  return (
+    <details className="group">
+      <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+        <span
+          className={`inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold ${
+            icon === "ps"
+              ? "bg-blue-100 text-blue-700"
+              : "bg-purple-100 text-purple-700"
+          }`}
+        >
+          {icon === "ps" ? "Ps" : "3D"}
+        </span>
+        {title}
+        <svg
+          className="w-4 h-4 transition-transform group-open:rotate-90"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M8.25 4.5l7.5 7.5-7.5 7.5"
+          />
+        </svg>
+      </summary>
+      <div className="mt-2 ml-8 p-3 bg-white/60 rounded-lg border border-gray-200/60">
+        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+          {content}
+        </p>
+      </div>
+    </details>
   );
 }
 
