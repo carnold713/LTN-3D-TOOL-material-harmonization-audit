@@ -34,10 +34,44 @@ export interface MaterialAuditResult {
   };
 }
 
+export interface CalibrationEntry {
+  referenceName: string;
+  category: string; // "finish" | "color" | "material"
+  aiScore: number;
+  adminScore: number | null; // null = approved
+  adminNote: string;
+}
+
+function buildCalibrationBlock(entries: CalibrationEntry[]): string {
+  if (entries.length === 0) return "";
+
+  const lines = entries.map((e) => {
+    if (e.category === "general") {
+      return `- [${e.referenceName}] GENERAL NOTE: "${e.adminNote}"`;
+    }
+    const verdict =
+      e.adminScore != null
+        ? `Admin corrected to ${e.adminScore.toFixed(2)}`
+        : "Admin approved";
+    return `- [${e.referenceName}] ${e.category.toUpperCase()}: AI scored ${e.aiScore.toFixed(2)} → ${verdict}. Note: "${e.adminNote}"`;
+  });
+
+  return `
+
+### Admin Calibration History
+The following are corrections and approvals from a human expert reviewing past audits. Use these to calibrate your scoring — if you see a pattern (e.g., you consistently score color too high or too low for certain materials), adjust accordingly.
+
+${lines.join("\n")}
+
+Apply these calibration signals to your scoring. If the admin corrected your score downward, you were too generous — be stricter on similar issues. If the admin corrected upward, you were too harsh — be more lenient on similar cases.`;
+}
+
 function buildComparisonPrompt(
   referenceName: string,
-  threshold: number
+  threshold: number,
+  calibration: CalibrationEntry[] = []
 ): string {
+  const calibrationBlock = buildCalibrationBlock(calibration);
   return `You are a material finishing expert performing a harmonization audit for architectural hardware. You are blunt, precise, and do not sugarcoat your assessments.
 
 IMAGE 1 (first image): The REFERENCE material — "${referenceName}". This is the single source of truth for how this material should look.
@@ -94,6 +128,7 @@ For EVERY category (pass or fail), provide specific instructions for fixing the 
 - Finish fix: "Increase Roughness from ~0.25 to 0.40 to reduce glossiness. Set the Anisotropy to 0.6 with rotation at 0° to simulate directional brush lines. In the bump/normal map, increase the brush line frequency from 80 to 120 lines per inch and reduce depth from 0.15 to 0.10."
 - Material fix: "Switch the base shader from a generic metal to a brass-specific PBR preset. Set metallic to 1.0, IOR to 2.5 (brass). Add a procedural noise to the roughness map (scale 0.02, contrast 0.3) to simulate natural grain variation. If using Substance, apply a 'Brass Patina' generator at 5-10% opacity."
 - For passing categories: Briefly note any minor 3D material tweaks that could perfect the match, or state "No 3D rendering correction needed — the material parameters match the reference."
+${calibrationBlock}
 
 ## Response Format
 
@@ -145,7 +180,8 @@ export async function compareMaterials(
   uploadBase64: string,
   uploadMime: string,
   referenceName: string,
-  passThreshold: number
+  passThreshold: number,
+  calibration: CalibrationEntry[] = []
 ): Promise<{ result: MaterialAuditResult; rawResponse: unknown }> {
   const client = new Anthropic({ apiKey });
 
@@ -194,7 +230,7 @@ export async function compareMaterials(
           },
           {
             type: "text",
-            text: buildComparisonPrompt(referenceName, passThreshold),
+            text: buildComparisonPrompt(referenceName, passThreshold, calibration),
           },
         ],
       },

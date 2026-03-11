@@ -58,6 +58,28 @@ model Audit {
   errorMessage String?
   visitorNote  String?
 
+  adminFeedback AdminFeedback?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminFeedback {
+  id      String @id @default(cuid())
+  auditId String @unique
+  audit   Audit  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  // Per-category admin overrides: "approve" (thumbs up) or a numeric grade
+  finishVerdict    String?   // "approve" or a score like "6.50"
+  finishNote       String?
+  colorVerdict     String?
+  colorNote        String?
+  materialVerdict  String?
+  materialNote     String?
+
+  // General note for the overall audit
+  overallNote String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
