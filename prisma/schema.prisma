@@ -46,6 +46,7 @@ model Audit {
 
   finishPhotoshopFix    String?
   colorPhotoshopFix     String?
+  colorExposureFix      String?
   materialPhotoshopFix  String?
 
   finishRenderFix       String?

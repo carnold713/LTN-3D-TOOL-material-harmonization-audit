@@ -23,6 +23,7 @@ export interface MaterialAuditResult {
     pass: boolean;
     feedback: string;
     photoshopFix: string;
+    exposureFix: string;
     renderFix: string;
   };
   material: {
@@ -116,18 +117,28 @@ A score below ${threshold} indicates a FAIL for that category.
 - For PASSING categories: Briefly confirm what matches well. Keep it to 1-2 sentences.
 
 ### Photoshop Fix Instructions (photoshopFix)
-For EVERY category (pass or fail), provide specific Photoshop instructions to correct or match the material appearance. Be precise with layer types, blend modes, and numeric values. For example:
-- Color fix: "Add a Hue/Saturation adjustment layer: Hue -8, Saturation -12, Lightness +3. Then add a Color Balance adjustment layer set to Midtones: Cyan/Red -15, Yellow/Blue +10. Use a Curves layer to pull the red channel down ~10 points at the midpoint (input 128, output 118)."
-- Finish fix: "Add a High Pass filter layer (radius 2.5px) set to Overlay blend mode at 60% opacity to sharpen brush lines. Duplicate, apply Gaussian Blur at 0.8px, set to Multiply at 20% to deepen grain. Add a Levels adjustment: shadows 15, midtones 1.05, highlights 240."
-- Material fix: "Add a noise layer (Filter > Noise > Add Noise: 3%, Gaussian, Monochromatic) set to Soft Light at 25% opacity for grain variation. Apply a subtle Texture overlay (canvas pattern, scale 80%, depth +15) to break up uniformity."
-- For passing categories: Briefly note any minor Photoshop tweaks that could perfect the match, or state "No Photoshop correction needed — the sample matches the reference."
+CRITICAL: These instructions are for correcting the UPLOADED/SUBMITTED image (IMAGE 2) so that it matches the REFERENCE image (IMAGE 1). You are telling the artist what Photoshop adjustments to apply to THEIR uploaded image to bring it closer to the reference. Do NOT describe adjustments to the reference image.
+
+For EVERY category (pass or fail), provide specific Photoshop instructions. Be precise with layer types, blend modes, and numeric values. Always phrase as "Your uploaded image is [too X / not enough Y] compared to the reference — apply [specific adjustment] to correct it." For example:
+- Color fix: "Your uploaded image is too warm compared to the reference. Add a Hue/Saturation adjustment layer: Hue -8, Saturation -12, Lightness +3. Then add a Color Balance adjustment layer set to Midtones: Cyan/Red -15, Yellow/Blue +10. Use a Curves layer to pull the red channel down ~10 points at the midpoint (input 128, output 118)."
+- Finish fix: "Your uploaded image has brush lines that are too coarse compared to the reference. Add a High Pass filter layer (radius 2.5px) set to Overlay blend mode at 60% opacity to sharpen brush lines. Duplicate, apply Gaussian Blur at 0.8px, set to Multiply at 20% to deepen grain. Add a Levels adjustment: shadows 15, midtones 1.05, highlights 240."
+- Material fix: "Your uploaded image shows too-uniform grain compared to the reference. Add a noise layer (Filter > Noise > Add Noise: 3%, Gaussian, Monochromatic) set to Soft Light at 25% opacity for grain variation. Apply a subtle Texture overlay (canvas pattern, scale 80%, depth +15) to break up uniformity."
+- For passing categories: Briefly note any minor Photoshop tweaks that could perfect the match, or state "No Photoshop correction needed — the uploaded image matches the reference."
+
+### Exposure Fix Instructions (exposureFix) — COLOR CATEGORY ONLY
+For the COLOR category, you MUST also provide a separate "exposureFix" field with specific exposure/brightness correction instructions for the uploaded image. Evaluate whether the uploaded image is overexposed or underexposed relative to the reference and provide precise corrections. For example:
+- "Your uploaded image is overexposed by approximately 0.5 stops compared to the reference. Add an Exposure adjustment layer: Exposure -0.5, Offset 0.0, Gamma 1.05. Alternatively, use Curves: pull the white point from 255 down to 235 and anchor midtones at input 128 / output 120."
+- "Your uploaded image is underexposed compared to the reference — shadows are crushed. Add an Exposure adjustment layer: Exposure +0.3, Offset +0.005, Gamma 0.95. Use a Curves layer to lift shadows: input 0 / output 15, and brighten midtones: input 128 / output 142."
+- If exposure matches well: "No exposure correction needed — the uploaded image brightness and exposure match the reference."
 
 ### 3D Rendering Fix Instructions (renderFix)
-For EVERY category (pass or fail), provide specific instructions for fixing the material in a 3D rendering program (covering common PBR material parameters used in programs like KeyShot, Blender, V-Ray, or Substance Painter). Be precise with shader parameters and numeric values. For example:
-- Color fix: "Shift the Base Color from hex #C4A265 toward #B8A070. Reduce the saturation by ~15% in HSV. If using a color texture map, apply a color correction node: lift the blue channel +0.05 and reduce red channel -0.08."
-- Finish fix: "Increase Roughness from ~0.25 to 0.40 to reduce glossiness. Set the Anisotropy to 0.6 with rotation at 0° to simulate directional brush lines. In the bump/normal map, increase the brush line frequency from 80 to 120 lines per inch and reduce depth from 0.15 to 0.10."
-- Material fix: "Switch the base shader from a generic metal to a brass-specific PBR preset. Set metallic to 1.0, IOR to 2.5 (brass). Add a procedural noise to the roughness map (scale 0.02, contrast 0.3) to simulate natural grain variation. If using Substance, apply a 'Brass Patina' generator at 5-10% opacity."
-- For passing categories: Briefly note any minor 3D material tweaks that could perfect the match, or state "No 3D rendering correction needed — the material parameters match the reference."
+CRITICAL: These instructions are for correcting the UPLOADED/SUBMITTED material (IMAGE 2) so that it matches the REFERENCE material (IMAGE 1). You are telling the 3D artist what render parameter changes to make to bring their submitted material closer to the reference.
+
+For EVERY category (pass or fail), provide specific instructions for fixing the material in a 3D rendering program (covering common PBR material parameters used in programs like KeyShot, Blender, V-Ray, or Substance Painter). Be precise with shader parameters and numeric values. Always phrase as "Your submitted material is [too X / not enough Y] compared to the reference — adjust [specific parameter]." For example:
+- Color fix: "Your submitted material is too warm/saturated compared to the reference. Shift the Base Color from hex #C4A265 toward #B8A070. Reduce the saturation by ~15% in HSV. If using a color texture map, apply a color correction node: lift the blue channel +0.05 and reduce red channel -0.08."
+- Finish fix: "Your submitted material is too glossy compared to the reference. Increase Roughness from ~0.25 to 0.40 to reduce glossiness. Set the Anisotropy to 0.6 with rotation at 0° to simulate directional brush lines. In the bump/normal map, increase the brush line frequency from 80 to 120 lines per inch and reduce depth from 0.15 to 0.10."
+- Material fix: "Your submitted material lacks the natural grain variation seen in the reference. Switch the base shader from a generic metal to a brass-specific PBR preset. Set metallic to 1.0, IOR to 2.5 (brass). Add a procedural noise to the roughness map (scale 0.02, contrast 0.3) to simulate natural grain variation. If using Substance, apply a 'Brass Patina' generator at 5-10% opacity."
+- For passing categories: Briefly note any minor 3D material tweaks that could perfect the match, or state "No 3D rendering correction needed — the submitted material parameters match the reference."
 ${calibrationBlock}
 
 ## Response Format
@@ -159,7 +170,8 @@ Respond with ONLY valid JSON — no markdown code fences, no additional text:
     "score": <0.00-10.00>,
     "pass": <true|false>,
     "feedback": "<specific feedback>",
-    "photoshopFix": "<specific Photoshop layers, adjustments, and numeric values>",
+    "photoshopFix": "<specific Photoshop color correction layers, adjustments, and numeric values>",
+    "exposureFix": "<specific exposure/brightness correction instructions for the uploaded image>",
     "renderFix": "<specific 3D rendering shader parameters and numeric values>"
   },
   "material": {

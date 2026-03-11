@@ -202,6 +202,7 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
         materialFeedback: result.material.feedback,
         finishPhotoshopFix: result.finish.photoshopFix || null,
         colorPhotoshopFix: result.color.photoshopFix || null,
+        colorExposureFix: result.color.exposureFix || null,
         materialPhotoshopFix: result.material.photoshopFix || null,
         finishRenderFix: result.finish.renderFix || null,
         colorRenderFix: result.color.renderFix || null,
