@@ -17,6 +17,7 @@ interface AuditResult {
   materialFeedback: string | null;
   finishPhotoshopFix: string | null;
   colorPhotoshopFix: string | null;
+  colorExposureFix: string | null;
   materialPhotoshopFix: string | null;
   finishRenderFix: string | null;
   colorRenderFix: string | null;
@@ -161,6 +162,7 @@ export default function ResultsPage() {
       score: audit.finishScore,
       feedback: audit.finishFeedback,
       photoshopFix: audit.finishPhotoshopFix,
+      exposureFix: null,
       renderFix: audit.finishRenderFix,
       pass: audit.finishScore != null && audit.finishScore >= 8,
     },
@@ -170,6 +172,7 @@ export default function ResultsPage() {
       score: audit.colorScore,
       feedback: audit.colorFeedback,
       photoshopFix: audit.colorPhotoshopFix,
+      exposureFix: audit.colorExposureFix,
       renderFix: audit.colorRenderFix,
       pass: audit.colorScore != null && audit.colorScore >= 8,
     },
@@ -179,6 +182,7 @@ export default function ResultsPage() {
       score: audit.materialScore,
       feedback: audit.materialFeedback,
       photoshopFix: audit.materialPhotoshopFix,
+      exposureFix: null,
       renderFix: audit.materialRenderFix,
       pass: audit.materialScore != null && audit.materialScore >= 8,
     },
@@ -414,14 +418,21 @@ export default function ResultsPage() {
                   {item.feedback}
                 </p>
 
-                {/* Photoshop & 3D Rendering Fix Instructions */}
-                {(item.photoshopFix || item.renderFix) && (
+                {/* Photoshop, Exposure & 3D Rendering Fix Instructions */}
+                {(item.photoshopFix || item.exposureFix || item.renderFix) && (
                   <div className="mt-4 space-y-3">
                     {item.photoshopFix && (
                       <FixInstructionBlock
                         icon="ps"
                         title="Photoshop Fix"
                         content={item.photoshopFix}
+                      />
+                    )}
+                    {item.exposureFix && (
+                      <FixInstructionBlock
+                        icon="ex"
+                        title="Exposure Correction"
+                        content={item.exposureFix}
                       />
                     )}
                     {item.renderFix && (
@@ -543,21 +554,24 @@ function FixInstructionBlock({
   title,
   content,
 }: {
-  icon: "ps" | "3d";
+  icon: "ps" | "ex" | "3d";
   title: string;
   content: string;
 }) {
+  const iconStyles = {
+    ps: "bg-blue-100 text-blue-700",
+    ex: "bg-amber-100 text-amber-700",
+    "3d": "bg-purple-100 text-purple-700",
+  };
+  const iconLabels = { ps: "Ps", ex: "Ex", "3d": "3D" };
+
   return (
     <details className="group">
       <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
         <span
-          className={`inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold ${
-            icon === "ps"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-purple-100 text-purple-700"
-          }`}
+          className={`inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold ${iconStyles[icon]}`}
         >
-          {icon === "ps" ? "Ps" : "3D"}
+          {iconLabels[icon]}
         </span>
         {title}
         <svg
