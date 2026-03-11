@@ -3,6 +3,31 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { deleteFile } from "@/lib/storage";
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const audit = await prisma.audit.findUnique({
+    where: { id },
+    include: {
+      referenceImage: { select: { id: true, name: true, category: true } },
+      adminFeedback: true,
+    },
+  });
+
+  if (!audit) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(audit);
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

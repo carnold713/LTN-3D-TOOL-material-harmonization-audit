@@ -6,7 +6,7 @@ import {
   cropImage,
   imageToBase64,
 } from "@/lib/imageProcessing";
-import { compareMaterials } from "@/lib/claude";
+import { compareMaterials, CalibrationEntry } from "@/lib/claude";
 import { getClaudeApiKey, getPassThreshold, getClaudeModel } from "@/lib/config";
 import { generateFilename } from "@/lib/utils";
 
@@ -99,6 +99,55 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
     const refBase64 = await imageToBase64(refBuffer);
     const uploadBase64 = await imageToBase64(uploadBuffer);
 
+    // Load all admin calibration feedback
+    const calibrationData = await prisma.adminFeedback.findMany({
+      include: {
+        audit: {
+          select: {
+            finishScore: true,
+            colorScore: true,
+            materialScore: true,
+            referenceImage: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const calibration: CalibrationEntry[] = [];
+    for (const fb of calibrationData) {
+      const refName = fb.audit.referenceImage.name;
+      const categories = [
+        { key: "finish", verdict: fb.finishVerdict, note: fb.finishNote, aiScore: fb.audit.finishScore },
+        { key: "color", verdict: fb.colorVerdict, note: fb.colorNote, aiScore: fb.audit.colorScore },
+        { key: "material", verdict: fb.materialVerdict, note: fb.materialNote, aiScore: fb.audit.materialScore },
+      ] as const;
+
+      for (const cat of categories) {
+        if (!cat.note && cat.verdict === "approve") continue;
+        if (cat.aiScore == null) continue;
+        const adminScore = cat.verdict && cat.verdict !== "approve" ? parseFloat(cat.verdict) : null;
+        calibration.push({
+          referenceName: refName,
+          category: cat.key,
+          aiScore: cat.aiScore,
+          adminScore: isNaN(adminScore as number) ? null : adminScore,
+          adminNote: cat.note || (cat.verdict === "approve" ? "AI grade was accurate." : "Score corrected."),
+        });
+      }
+
+      // Add overall note as a general entry
+      if (fb.overallNote) {
+        calibration.push({
+          referenceName: refName,
+          category: "general",
+          aiScore: 0,
+          adminScore: null,
+          adminNote: fb.overallNote,
+        });
+      }
+    }
+
     // Call Claude for comparison
     const { result, rawResponse } = await compareMaterials(
       apiKey,
@@ -108,7 +157,8 @@ async function processAudit(auditId: string, apiKey: string): Promise<string> {
       uploadBase64,
       audit.uploadMimetype,
       audit.referenceImage.name,
-      passThreshold
+      passThreshold,
+      calibration
     );
 
     // Crop images based on Claude's detected regions

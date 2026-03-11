@@ -12,6 +12,7 @@ interface AuditRow {
   materialScore: number | null;
   createdAt: string;
   referenceImage: { name: string; category: string };
+  adminFeedback: { id: string } | null;
 }
 
 interface Pagination {
@@ -113,6 +114,9 @@ export default function AdminAuditsPage() {
                   <th className="text-center px-4 py-3 font-medium text-gray-500">
                     Result
                   </th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500">
+                    Reviewed
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">
                     Date
                   </th>
@@ -124,7 +128,7 @@ export default function AdminAuditsPage() {
                   <tr key={audit.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <a
-                        href={`/results/${audit.id}`}
+                        href={`/admin/audits/${audit.id}`}
                         className="text-brand-600 hover:underline"
                       >
                         {audit.referenceImage.name}
@@ -173,6 +177,20 @@ export default function AdminAuditsPage() {
                         </span>
                       ) : (
                         "-"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {audit.adminFeedback ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                          Reviewed
+                        </span>
+                      ) : (
+                        <a
+                          href={`/admin/audits/${audit.id}`}
+                          className="text-xs text-brand-600 hover:underline"
+                        >
+                          Review
+                        </a>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">

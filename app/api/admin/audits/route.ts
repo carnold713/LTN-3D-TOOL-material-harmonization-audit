@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         referenceImage: { select: { name: true, category: true } },
+        adminFeedback: { select: { id: true } },
       },
     }),
     prisma.audit.count({ where }),
